@@ -15,23 +15,17 @@ Boost 1.63+
 OpenCV 4.0+ 
 ```
 
-## Compile
+## How to compile
 ```
 $ mkdir build
 $ cd build
-$ cmake .. -DCMAKE_BIULD_TYPE=Release -G Ninja
-$ ninja
+$ cmake .. -DCMAKE_BIULD_TYPE=Release
+$ make
 ```
 
 ## How to run
-Target generation (e.g. ico_deltille example pattern)
 ```
-$ python3 ./scripts/generate_pattern.py --design ico_deltille ico_deltille.pdf
-```
-
-Target detector
-```
-$ ./deltille_detector -t /path/to/dsc/pattern.dsc -f /path/to/image/*.png -o /path/to/output -s
+$ ./deltille_detector -t /path/to/<pattern>.dsc -f /path/to/your/image/*.png -o /output/path -s
 ```
 
 ## License
