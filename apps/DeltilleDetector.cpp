@@ -50,7 +50,7 @@ bool writeCornersToFile(std::ostream &os,
     }
   }
 
-  cout << "writing " << num_corners << "\n";
+  cout << "Writing " << num_corners << " corners to : " << filename << endl;
 
   os << "filename: " << filename << endl;
   os << "width: " << image_size.width << endl;
@@ -142,63 +142,35 @@ private:
 };
 
 void RunDetector(DataSource *data_source, string target_dsc_fn,
-                 const fs::path &output_dir, bool debug) {
+                 const string output_dir, bool save_images) {
   TargetDetector target_detector(target_dsc_fn);
-
-  string debug_path;
-  if (debug) {
-    debug_path = (output_dir / fs::path("deltille_out")).string();
-
-    if (!fs::exists(debug_path))
-      if (!fs::create_directory(debug_path)) {
-        throw runtime_error("failed to create debug output directory");
-      }
-
-    if (!fs::is_directory(debug_path)) {
-      throw invalid_argument("invalid debug output path");
-    }
-  }
-
-  if (debug) {
-    cv::namedWindow("detection", cv::WINDOW_NORMAL);
-  }
-
-  auto do_write_corners = !output_dir.string().empty();
-
-  // NOTE: if debug == false, this could be run in parallel
-  cv::Mat I, debug_image;
+  
+  cv::Mat I, output_image;
   for (int i = 0; data_source->getImage(I, i); ++i) {
     if (!I.empty()) {
       vector<CalibrationCorner> corners;
-      target_detector.run(I, corners, debug ? &debug_image : nullptr);
+      target_detector.run(I, corners, save_images ? &output_image : nullptr);
 
-      if (do_write_corners) {
-        auto filename = data_source->getLastFilename();
-        auto basename = fs::path(filename).stem();
-        auto output_filename =
-            output_dir / fs::change_extension(basename, ".orpc");
- 
-        std::ofstream file(output_filename.string());
-        if (file.is_open()) {
-          writeCornersToFile(file, corners, filename, I.size(), true);
-        } else {
-          cerr << "Failed to open: " << output_filename << " for writing"
-               << endl;
-        }
+      auto filename = data_source->getLastFilename();
+      auto filepath = fs::path(filename);
+      auto outpath =
+          output_dir.empty() ? filepath.parent_path() : fs::path(output_dir);
+      auto basename = filepath.stem();
+      auto out_orpc_fn = outpath / fs::change_extension(basename, ".orpc");
+
+      std::ofstream fo(out_orpc_fn.string());
+      if (fo.is_open()) {
+        writeCornersToFile(fo, corners, filename, I.size(), true);
+      } else {
+        cerr << "Failed to open: " << out_orpc_fn << " for writing"
+              << endl;
       }
 
-      if (debug) {
-        cv::imshow("detection", debug_image);
-        int k = cv::waitKey(100);
-        if (k == ' ') // pause on space
-          k = cv::waitKey(0);
-        if (k == 'q' || k == 27) // quite on 'q' or ESC
-          break;
-
-        auto fn_stem = fs::path(data_source->getLastFilename()).stem();
-        auto fn = fs::change_extension(fs::path(debug_path) / fn_stem, ".png");
-        cout << "Writing detection result to : " << fn << endl;
-        cv::imwrite(fn.string(), debug_image);
+      if (save_images) {
+        auto out_basename = "out_" + basename.string();
+        auto out_img_fn = fs::change_extension(outpath / out_basename, ".png");
+        cout << "Writing detection image to : " << out_img_fn << endl;
+        cv::imwrite(out_img_fn.string(), output_image);
       }
     }
   }
@@ -206,9 +178,9 @@ void RunDetector(DataSource *data_source, string target_dsc_fn,
 
 int main(int argc, char **argv) {
   string target_dsc_fn;
+  string output_dir{""};
 
   vector<string> files;
-  fs::path output_dir;
 
   po::options_description desc(argv[0]);
   desc.add_options()("help,h", "Produce this help message")(
@@ -216,8 +188,8 @@ int main(int argc, char **argv) {
       "Target *.dsc file")("files,f",
                            po::value<vector<string>>(&files)->multitoken(),
                            "List of image files")(
-      "output,o", po::value<string>(), "Output directory")(
-      "debug,d", "draw the detected corners and store the result to disk");
+      "output,o", po::value<string>(&output_dir), "Output directory")(
+      "save-images,s", "Store debug images");
 
   po::variables_map vm;
   try {
@@ -239,11 +211,9 @@ int main(int argc, char **argv) {
   }
 
   if (vm.count("output")) {
-    output_dir = fs::path(vm["output"].as<string>());
     if (!fs::exists(output_dir)) {
       if (!fs::create_directory(output_dir)) {
-        throw invalid_argument("invalid output directory " +
-                               output_dir.string());
+        throw invalid_argument("invalid output directory " + output_dir);
       }
     } else {
       if (!fs::is_directory(output_dir)) {
@@ -254,7 +224,7 @@ int main(int argc, char **argv) {
 
   if (!files.empty()) {
     ImageListDataSource data_source(move(files));
-    RunDetector(&data_source, target_dsc_fn, output_dir, vm.count("debug"));
+    RunDetector(&data_source, target_dsc_fn, output_dir, vm.count("save-images"));
   }
 
   return 0;

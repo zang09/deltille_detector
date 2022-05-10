@@ -17,7 +17,7 @@
 */
 
 /*
- * ApriltagCheckerboardDetector.cpp
+ * TaggedBoardIndexer.cpp
  *
  *  Created on: Sep 28, 2016
  *      Author: mperdoch
@@ -34,8 +34,13 @@
 #include <deltille/apriltags/Tag16h5.h>
 #include <deltille/apriltags/Tag25h7.h>
 #include <deltille/apriltags/Tag25h9.h>
-#include <deltille/apriltags/Tag36h11.h>
 #include <deltille/apriltags/Tag36h9.h>
+#include <deltille/apriltags/Tag36h11.h>
+#include <deltille/deltags/Tag16h5.h>
+#include <deltille/deltags/Tag25h7.h>
+#include <deltille/deltags/Tag25h9.h>
+#include <deltille/deltags/Tag36h9.h>
+#include <deltille/deltags/Tag36h11.h>
 
 namespace orp {
 namespace calibration {
@@ -43,20 +48,30 @@ namespace calibration {
 using DelTag = Triangle<cv::Point2f>;
 using AprilTag = Quadangle<cv::Point2f>;
 
-const AprilTags::TagCodes &tagFamilyNameToCodes(const std::string &family) {
-  if (family == "t16h5")
-    return AprilTags::tagCodes16h5;
-  else if (family == "t25h7")
-    return AprilTags::tagCodes25h7;
-  else if (family == "t25h9")
-    return AprilTags::tagCodes25h9;
-  else if (family == "t36h9")
-    return AprilTags::tagCodes36h9;
-  else if (family == "t36h11")
-    return AprilTags::tagCodes36h11;
+const Deltille::TagCodes &tagFamilyNameToCodes(const std::string &family) {
+  if (family == "aprilTag16h5")
+    return Deltille::aprilTagCodes16h5;
+  else if (family == "aprilTag25h7")
+    return Deltille::aprilTagCodes25h7;
+  else if (family == "aprilTag25h9")
+    return Deltille::aprilTagCodes25h9;
+  else if (family == "aprilTag36h9")
+    return Deltille::aprilTagCodes36h9;
+  else if (family == "aprilTag36h11")
+    return Deltille::aprilTagCodes36h11;
+  else if (family == "delTag16h5")
+    return Deltille::delTagCodes16h5;
+  else if (family == "delTag25h7")
+    return Deltille::delTagCodes25h7;
+  else if (family == "delTag25h9")
+    return Deltille::delTagCodes25h9;
+  else if (family == "delTag36h9")
+    return Deltille::delTagCodes36h9;
+  else if (family == "delTag36h11")
+    return Deltille::delTagCodes36h11;
   else {
-    printf("Unknown family %s, defaulting to t36h11\n", family.c_str());
-    return AprilTags::tagCodes36h11;
+    printf("Unknown family %s, defaulting to aprilTag36h11\n", family.c_str());
+    return Deltille::aprilTagCodes36h11;
   }
 }
 
@@ -78,58 +93,6 @@ void writeBoardObservations(const char *filename,
         } else
           fprintf(out, "%f %f\n", obs_corners[j].x, obs_corners[j].y);
       }
-    }
-    fclose(out);
-  }
-}
-
-void writeBoardObservationsHH(const char *filename,
-                              const std::vector<BoardDefinition> &defs,
-                              const std::vector<BoardObservation> &boards,
-                              bool output_unindexed_boards) {
-  FILE *out = fopen(filename, "w");
-  if (out != NULL) {
-    int cnt = 0;
-    if (!output_unindexed_boards) {
-      for (size_t b = 0; b < boards.size(); ++b)
-        if (defs.size() > 0 && boards[b].indexed)
-          cnt++;
-    } else
-      cnt = int(boards.size());
-    fprintf(out, "%d\n", cnt);
-    for (size_t b = 0; b < boards.size(); ++b) {
-      auto &board = boards[b];
-      auto &corners = board.corner_locations;
-      if (defs.size() > 0 && board.indexed) {
-        // orp::calibration::BoardDefinition &def = defs[board.board_id];
-        fprintf(out, "%d %d\n", board.board_id, 1);
-      } else if (output_unindexed_boards)
-        // if the board number is unknown
-        fprintf(out, "%d %d\n", -1, 0);
-      else
-        // skip unindexed board completely
-        continue;
-      for (size_t j = 0; j < corners.size(); j++)
-        fprintf(out, "%f %f\n", corners[j].x, corners[j].y);
-    }
-    fclose(out);
-  }
-}
-
-void writeBoardDefinitionsHH(const char *filename,
-                             const std::vector<BoardDefinition> &defs) {
-  FILE *out = fopen(filename, "w");
-  if (out != NULL) {
-    fprintf(out, "%d\n", int(defs.size()));
-    for (size_t b = 0; b < defs.size(); ++b) {
-      const orp::calibration::BoardDefinition &board = defs[b];
-      const cv::Mat &corners = board.corner_locations;
-      fprintf(out, "%d\n", corners.size().area());
-      for (int r = 0; r < corners.rows; ++r)
-        for (int c = 0; c < corners.cols; ++c) {
-          const cv::Vec3d pt = corners.at<const cv::Vec3d>(r, c);
-          fprintf(out, "%f %f %f\n", pt[0], pt[1], pt[2]);
-        }
     }
     fclose(out);
   }
@@ -201,12 +164,11 @@ bool updateBoardsWithCalibratedTargetFile(std::istream &in,
 }
 
 void readBoardDefinitions(std::istream &in, std::vector<BoardDefinition> &defs,
-                          AprilTagFamilies &detectors) {
+                          TagFamilies &detectors) {
   std::string line;
-  std::map<int, BoardDefinition>
-      boards; // code -> location of lower left corner on the checkerboard
+  std::map<int, BoardDefinition> boards;
   auto cur = boards.end();
-  int state = 0, sz = 0;
+
   // generate new target_id
   int target_id = 0;
   if (defs.size() > 0)
@@ -216,10 +178,13 @@ void readBoardDefinitions(std::istream &in, std::vector<BoardDefinition> &defs,
     std::istringstream iss(line);
     int board, tagid, lx, ly;
     double x, y, z;
+    float bbits;
     char c;
-    if (state == 0) {
+    if (!(iss >> tagid >> c >> lx >> c >> ly >> c >> x >> c >> y >> c >> z)) {
+      // If not a corner, read two lines of header
       iss.str(line);
       iss.clear();
+      // First line: board_id, cols, rows, size
       if (!(iss >> board >> c >> lx >> c >> ly >> c >> x)) {
         printf("Error reading file, line >%s<\n", line.c_str());
         break;
@@ -227,27 +192,29 @@ void readBoardDefinitions(std::istream &in, std::vector<BoardDefinition> &defs,
         BoardDefinition b;
         b.id = board;
         b.target_id = target_id;
-        if (ly == 0) {
-          // triangular boards are always equilateral
-          b.cols = lx - 2;
-          b.rows = lx - 2;
-          b.triangular = true;
-          sz = b.cols * (b.rows + 1) / 2;
-        } else {
-          b.cols = lx - 1;
-          b.rows = ly - 1;
-          b.triangular = false;
-          sz = b.cols * b.rows;
-        }
+        b.cols = lx;
+        b.rows = ly;
         b.size = x;
         b.corner_locations.create(b.rows, b.cols, CV_64FC3);
+
+        // Second line: family_name, border_bits
         std::getline(in, b.family, ',');
         std::getline(in, line);
         iss.str(line);
         iss.clear();
-        float bbits;
         iss >> bbits;
         b.border_bits = bbits;
+
+        // Determine checkerboard/deltille from tag family name
+        if (b.family.compare(0, 8, "aprilTag") == 0) {
+          b.triangular = false;
+        } else if (b.family.compare(0, 6, "delTag") == 0) {
+          b.triangular = true;
+        } else {
+          throw std::runtime_error("unknown tag family: " + b.family);
+        }
+
+        // Todo: Replace the key with {family, bbits}
         if (detectors.count(b.family) == 0) {
           std::shared_ptr<TagFamily> det = std::make_shared<TagFamily>(
               tagFamilyNameToCodes(b.family), b.border_bits);
@@ -260,44 +227,16 @@ void readBoardDefinitions(std::istream &in, std::vector<BoardDefinition> &defs,
         auto tmp = boards.insert(std::make_pair(board, b));
         if (tmp.second)
           cur = tmp.first;
+      }
+    } else {
+      // the points will be in the matrix indexed from top to bottom (unlike
+      // on the target), flip them upside down here
+      cur->second.corner_locations.at<cv::Vec3d>(ly, lx) = cv::Vec3d(x, y, z);
 
-#ifdef DEBUG_REINDEXING
-        printf("board: %d, family: %s, border: %.1f, cols: %d, rows: %d, sz: "
-               "%.3f mm\n",
-               board, b.family.c_str(), b.border_bits, lx, ly, x);
-#endif
-        state = 1;
-      }
-    } else if (state == 1) {
-      if (!(iss >> tagid >> c >> lx >> c >> ly >> c >> x >> c >> y >> c >> z)) {
-        printf("Error reading file, line >%s<\n", line.c_str());
-        break;
-      } else {
-#ifdef DEBUG_REINDEXING
-        printf("  tag: %d, c: %d, r: %d, x: %f, y: %f, z: %f\n", tagid, lx, ly,
-               x, y, z);
-#endif
-        // the points will be in the matrix indexed from top to bottom (unlike
-        // on the target), flip them upside down here
-        if (!cur->second.triangular)
-          cur->second.corner_locations.at<cv::Vec3d>(cur->second.rows - 1 - ly,
-                                                     lx) = cv::Vec3d(x, y, z);
-        else
-          cur->second.corner_locations.at<cv::Vec3d>(ly, lx) =
-              cv::Vec3d(x, y, z);
-        sz--;
-        if (sz == 0)
-          state = 0;
-        if (tagid < 0)
-          // no use for empty square corners here
-          continue;
-        if (!cur->second.triangular)
-          cur->second.tag_locations.insert(std::make_pair(
-              tagid, cv::Point2i(lx, cur->second.rows - 1 - ly)));
-        else
-          cur->second.tag_locations.insert(
-              std::make_pair(tagid, cv::Point2i(lx, ly)));
-      }
+      if (tagid < 0)
+        continue;
+
+      cur->second.tag_locations.insert(std::make_pair(tagid, cv::Point2i(lx, ly)));
     }
   }
 
@@ -628,9 +567,9 @@ void TaggedBoardIndexer::fixCheckerBoards(
         if (m.at<int>(r, c) != -1 && m.at<int>(r, c + 1) != -1 &&
             m.at<int>(r + 1, c) != -1 && m.at<int>(r + 1, c + 1) != -1) {
           p[0] = cor[m.at<int>(r, c)];
-          p[1] = cor[m.at<int>(r + 1, c)];
+          p[1] = cor[m.at<int>(r, c + 1)];
           p[2] = cor[m.at<int>(r + 1, c + 1)];
-          p[3] = cor[m.at<int>(r, c + 1)];
+          p[3] = cor[m.at<int>(r + 1, c)];
 
           TagDetection det;
           std::shared_ptr<TagFamily> best_detector;
@@ -653,22 +592,24 @@ void TaggedBoardIndexer::fixCheckerBoards(
               det.hammingDistance = tag->second.first;
               det.code = tag->second.second.y;    // row
               det.obsCode = tag->second.second.x; // column
+
               // when a rotation is detected, make sure the QR tag is associated
               // with the correct corner (bottom, left)
+              // *do not change the rotation at this point
               int realr = r, realc = c;
               switch (det.rotation) {
               case 1:
-                realr++;
+                realc++;
                 break;
               case 2:
                 realr++;
                 realc++;
                 break;
               case 3:
-                realc++;
+                realr++;
                 break;
               }
-              det.rotation = (det.rotation + 3) % 4;
+
 #ifdef DEBUG_REINDEXING
               printf("FOUND tag: %d, fam: %s, detection: %d, rotation: %d, "
                      "position r: %d, c:%d from board: %d (%d of target %d), "
@@ -745,14 +686,14 @@ void TaggedBoardIndexer::fixCheckerBoards(
     switch (best) {
     case 1:
       transpose(rotated, rotated);
-      flip(rotated, rotated, 1); // transpose+flip(1)=CW
+      flip(rotated, rotated, 0); // transpose+flip(1)=CW
       break;
     case 2:
       flip(rotated, rotated, -1); // flip(-1)=180
       break;
     case 3:
       transpose(rotated, rotated);
-      flip(rotated, rotated, 0); // transpose+flip(1)=CW
+      flip(rotated, rotated, 1); // transpose+flip(1)=CW
       break;
     default:
       break;
@@ -764,10 +705,10 @@ void TaggedBoardIndexer::fixCheckerBoards(
            board_defs[obs.board_id].rows, board_defs[obs.board_id].cols,
            best * 90);
 #if DEBUG_REINDEXING == 3
-    cout << "Detected:" << endl;
-    cout << obs.board << endl;
-    cout << "Rotated:" << endl;
-    cout << rotated << endl;
+    std::cout << "Detected:" << std::endl;
+    std::cout << obs.board << std::endl;
+    std::cout << "Rotated:" << std::endl;
+    std::cout << rotated << std::endl;
 #endif
 #endif
     // now find proper offset...
@@ -821,9 +762,9 @@ void TaggedBoardIndexer::fixCheckerBoards(
     rotated(cv::Rect(ox, oy, cols, rows))
         .copyTo(result(cv::Rect(minx, miny, cols, rows)));
 #if DEBUG_REINDEXING == 3
-    cout << obs.board << endl;
-    cout << "RESULT:" << endl;
-    cout << result << endl;
+    std::cout << obs.board << std::endl;
+    std::cout << "RESULT:" << std::endl;
+    std::cout << result << std::endl;
 #endif
     // finally re-order corners...
     std::vector<cv::Point2f> reordered(result.size().area(),
@@ -841,8 +782,8 @@ void TaggedBoardIndexer::fixCheckerBoards(
     obs.indexed = true;
     obs.corner_locations = reordered;
 #if DEBUG_REINDEXING == 3
-    cout << "FINAL RESULT:" << endl;
-    cout << obs.board << endl;
+    std::cout << "FINAL RESULT:" << std::endl;
+    std::cout << obs.board << std::endl;
 #endif
   }
   sort(boards.begin(), boards.end(), BoardObservation::orderById);
@@ -922,6 +863,7 @@ bool TaggedBoardIndexer::detectDeltaTag(const cv::Mat &img,
   // std::vector<TagDetection> &t = obs.tags;
   std::vector<cv::Point2f> &cor = obs.corner_locations;
   std::vector<cv::Point2f> p(3);
+
 
   // location of the tag...
   int ox, oy;
@@ -1010,10 +952,10 @@ bool TaggedBoardIndexer::detectDeltaTag(const cv::Mat &img,
 #ifdef DEBUG_REINDEXING
       cv::line(dbg, cv::Point(p[0].x * 65536, p[0].y * 65536),
                cv::Point(p[1].x * 65536, p[1].y * 65536), cv::Scalar(0, 0, 255),
-               2, CV_AA, 16);
+               2, cv::LINE_AA, 16);
       cv::line(dbg, cv::Point(p[0].x * 65536, p[0].y * 65536),
                cv::Point(p[2].x * 65536, p[2].y * 65536), cv::Scalar(0, 255, 0),
-               2, CV_AA, 16);
+               2, cv::LINE_AA, 16);
 #endif
     } else {
       // unknown tag... ignore it...
@@ -1136,8 +1078,7 @@ void TaggedBoardIndexer::fixTriangleBoards(
           int r0, c0;
           transformToBoardTriangleLocation(best_r, r - oy, c - ox, def.rows, r0,
                                            c0);
-          if (r0 < 0 || c0 < 0 || r0 >= result.rows || c0 >= result.cols ||
-              r0 + c0 >= def.rows)
+          if (r0 < 0 || c0 < 0 || r0 >= result.rows || c0 >= result.cols)
             continue;
           result.at<int>(r0, c0) = m.at<int>(r, c);
         }

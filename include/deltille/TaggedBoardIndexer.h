@@ -33,7 +33,7 @@
 
 namespace orp {
 namespace calibration {
-typedef std::map<std::string, std::shared_ptr<TagFamily>> AprilTagFamilies;
+typedef std::map<std::string, std::shared_ptr<TagFamily>> TagFamilies;
 
 struct BoardDefinition {
   typedef std::map<int, cv::Point2i> BoardTagMap;
@@ -52,24 +52,16 @@ struct BoardDefinition {
   std::shared_ptr<TagFamily> detector;
 };
 
-const AprilTags::TagCodes &tagFamilyNameToCodes(const std::string &family);
+const Deltille::TagCodes &tagFamilyNameToCodes(const std::string &family);
 
 void readBoardDefinitions(std::istream &in, std::vector<BoardDefinition> &defs,
-                          AprilTagFamilies &detectors);
+                          TagFamilies &detectors);
 bool updateBoardsWithCalibratedTargetFile(std::istream &in,
                                           std::vector<BoardDefinition> &defs);
 
 void writeBoardObservations(const char *filename,
                             const std::vector<BoardDefinition> &defs,
                             const std::vector<BoardObservation> &boards);
-
-// interface with Hyowon's calibration
-void writeBoardDefinitionsHH(const char *filename,
-                             const std::vector<BoardDefinition> &defs);
-void writeBoardObservationsHH(const char *filename,
-                              const std::vector<BoardDefinition> &defs,
-                              const std::vector<BoardObservation> &boards,
-                              bool output_unindexed_boards = false);
 
 template <typename Point3d, typename Point2d>
 void get2Dto3DCorrespondences(BoardDefinition &def, BoardObservation &board,
@@ -98,7 +90,7 @@ bool fixFullCheckerBoardOrientation(const cv::Mat &img,
 struct TaggedBoardIndexer {
   typedef std::map<int, std::pair<int, cv::Point2i>> TagToBoardMap;
 
-  AprilTagFamilies detectors;
+  TagFamilies detectors;
   std::vector<BoardDefinition> board_defs;
   TagToBoardMap tag_to_board_map;
   cv::Mat dbg;
@@ -151,17 +143,6 @@ struct TaggedBoardIndexer {
         tag_to_board_map[tl.first + board_tag_offset] =
             std::make_pair(int(b), tl.second);
     }
-  }
-
-  void writeObservationsHH(const std::string &filename,
-                           const std::vector<BoardObservation> &boards,
-                           bool output_unindexed_boards = false) const {
-    writeBoardObservationsHH(filename.c_str(), board_defs, boards,
-                             output_unindexed_boards);
-  }
-
-  void writedDefinitionsHH(const std::string &filename) const {
-    writeBoardDefinitionsHH(filename.c_str(), board_defs);
   }
 
   void setDebugImage(cv::Mat &dbg_image) { dbg = dbg_image; }

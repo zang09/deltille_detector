@@ -35,30 +35,6 @@ DetectorParams detector_params;
 #ifdef DEBUG_INDEXING
 cv::Mat DEBUG;
 #endif
-/*
-void test()
-{
-    cv::Mat input;
-    cv::Size board_size;
-    std::vector<orp::calibration::BoardObservation> boards;
-
-    orp::calibration::GridDetectorContext<orp::calibration::MonkeySaddlePoint>
-grid_detector(input);
-    grid_detector.findBoards(board_size, boards, false);
-
-    orp::calibration::GridDetectorContext<orp::calibration::SaddlePoint>
-grid_detector2(input);
-    grid_detector2.findBoards(board_size, boards, false);
-
-    orp::calibration::GridDetectorContext<orp::calibration::MonkeySaddlePoint,
-float> grid_detectorf(input);
-    grid_detectorf.findBoards(board_size, boards, false);
-
-    orp::calibration::GridDetectorContext<orp::calibration::SaddlePoint, float>
-grid_detector2f(input);
-    grid_detector2f.findBoards(board_size, boards, false);
-}
-*/
 
 template <typename ImageType>
 static inline void hessianResponseImpl(const cv::Mat &inputImage,
@@ -292,7 +268,7 @@ void drawCheckerboardCornersOnly(cv::Mat &result, const BoardObservation &obs,
                 if (id1 != -1 && id2 != -1)
                 {
                     const cv::Point2f &s1 = corners[id1], &s2 = corners[id2];
-                   // cv::line(result, cv::Point(s1.x * ss, s1.y * ss), cv::Point(s2.x * ss, s2.y * ss), color, thickness, CV_AA, shift);
+                   // cv::line(result, cv::Point(s1.x * ss, s1.y * ss), cv::Point(s2.x * ss, s2.y * ss), color, thickness, cv::LINE_AA, shift);
                 }
 #endif
       }

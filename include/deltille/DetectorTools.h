@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <opencv2/opencv.hpp>
+#include <numeric>
 #include <vector>
 
 #include <deltille/TagFamily.h>
@@ -36,8 +37,8 @@
 #define M_PI 3.1415926535897932384626433832795
 #endif
 
-// #define DEBUG_INDEXING 1            // levels 1..6
-// #define DEBUG_REINDEXING 1          // levels 1..3
+// #define DEBUG_INDEXING 2           // levels 1..6
+// #define DEBUG_REINDEXING 3          // levels 1..3
 // #define DEBUG_TIMING
 
 namespace orp {
@@ -186,7 +187,7 @@ void stretchIntensities(cv::InputArray input, cv::OutputArray output);
 template <typename FloatPoint>
 void subpixel_marker(cv::Mat &img, const FloatPoint &pt, float sz,
                      const cv::Scalar &color, int thickness = 1,
-                     int lineType = CV_AA) {
+                     int lineType = cv::LINE_AA) {
   const int shift = 16;
   const float ss = (1 << shift);
   cv::rectangle(img, cv::Point(int((pt.x - sz) * ss), int((pt.y - sz) * ss)),
@@ -197,7 +198,7 @@ void subpixel_marker(cv::Mat &img, const FloatPoint &pt, float sz,
 template <typename FloatPoint>
 void subpixel_line(cv::Mat &img, const FloatPoint &pt1, const FloatPoint &pt2,
                    const cv::Scalar &color, int thickness = 1,
-                   int lineType = CV_AA) {
+                   int lineType = cv::LINE_AA) {
   const int shift = 16;
   const float ss = (1 << shift);
   cv::line(img, cv::Point(int(pt1.x * ss), int(pt1.y * ss)),
@@ -224,17 +225,6 @@ void stretchIntensities(cv::InputArray input, cv::OutputArray output);
 int findRoot(std::vector<int> &cluster_ids, int id);
 
 bool point_comparator(const cv::Point2i &a, const cv::Point2i &b);
-
-//#ifdef _WIN32
-#ifndef __linux__
-template <class ForwardIterator, class T>
-void iota(ForwardIterator first, ForwardIterator last, T value) {
-  while (first != last) {
-    *first++ = value;
-    ++value;
-  }
-}
-#endif
 
 template <typename PointType>
 double distance2(const PointType &a, const PointType &b) {
@@ -333,12 +323,8 @@ inline void solveCubicPolynomial(const Float *a, std::complex<Float> roots[3]) {
 template <typename ElementType, typename IndexType>
 void partial_sort_indexes(const ElementType *v, IndexType *idx, size_t len,
                           size_t up_to) {
-// initialize original index locations
-#ifndef __linux__
-  iota(idx, idx + len, 0);
-#else
+  // initialize original index locations
   std::iota(idx, idx + len, 0);
-#endif
 
   // sort indexes based on comparing values in v
   std::partial_sort(idx, idx + up_to, idx + len,

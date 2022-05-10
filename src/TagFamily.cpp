@@ -28,24 +28,27 @@
 
  #include "apriltags/Tag36h11.h"
  #include "apriltags/TagFamily.h"
- TagFamily *tag36h11 = new TagFamily(tagCodes36h11);
+ TagFamily *aprilTag36h11 = new TagFamily(aprilTagCodes36h11);
 
  // available tag families:
 
  #include "apriltags/Tag16h5.h"
- #include "apriltags/Tag16h5_other.h"
  #include "apriltags/Tag25h7.h"
  #include "apriltags/Tag25h9.h"
- #include "apriltags/Tag36h11.h"
- #include "apriltags/Tag36h11_other.h"
  #include "apriltags/Tag36h9.h"
+ #include "apriltags/Tag36h11.h"
+ #include "deltags/Tag16h5.h"
+ #include "deltags/Tag25h7.h"
+ #include "deltags/Tag25h9.h"
+ #include "deltags/Tag36h9.h"
+ #include "deltags/Tag36h11.h"
 
  */
 
 namespace orp {
 namespace calibration {
 
-TagFamily::TagFamily(const AprilTags::TagCodes &tagCodes,
+TagFamily::TagFamily(const Deltille::TagCodes &tagCodes,
                      const float blackBorder)
     : blackBorder(blackBorder), bits(tagCodes.bits),
       dimension((int)std::sqrt((float)bits)),

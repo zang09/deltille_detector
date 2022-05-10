@@ -227,20 +227,20 @@ public:
     mean /= cnt;
 // check quality of the triangle
 #if DEBUG_INDEXING >= 5
-    cv::cvtColor(input, DEBUG, CV_GRAY2RGB);
+    cv::cvtColor(input, DEBUG, cv::COLOR_GRAY2RGB);
     cv::line(
         DEBUG, cv::Point(pt0.x * 65536, pt0.y * 65536),
         cv::Point((pt0.x + dst_u[i11]) * 65536, (pt0.y + dst_v[i11]) * 65536),
-        cv::Scalar(0, 0, 255), 1, CV_AA, 16);
+        cv::Scalar(0, 0, 255), 1, cv::LINE_AA, 16);
     cv::line(
         DEBUG, cv::Point(pt0.x * 65536, pt0.y * 65536),
         cv::Point((pt0.x + dst_u[pt]) * 65536, (pt0.y + dst_v[pt]) * 65536),
-        cv::Scalar(0, 255, 0), 1, CV_AA, 16);
+        cv::Scalar(0, 255, 0), 1, cv::LINE_AA, 16);
     cv::line(
         DEBUG,
         cv::Point((pt0.x + dst_u[i11]) * 65536, (pt0.y + dst_v[i11]) * 65536),
         cv::Point((pt0.x + dst_u[pt]) * 65536, (pt0.y + dst_v[pt]) * 65536),
-        cv::Scalar(255, 0, 0), 1, CV_AA, 16);
+        cv::Scalar(255, 0, 0), 1, cv::LINE_AA, 16);
     if (maxI - minI < detector_params.rectangle_consistency_threshold)
       printf(
           "Accepting quad candidate: minI: %.3lf, maxI: %.3lf, thresh: %.3lf\n",
@@ -342,11 +342,11 @@ public:
       cost2 = u[i11] * v[candidates[1]] - v[i11] * u[candidates[1]];
       int i10, i01;
       if (cost1 > 0 && cost2 < 0) {
-        i10 = candidates[0];
-        i01 = candidates[1]; // axis changed by Hyowon
-      } else if (cost1 < 0 && cost2 > 0) {
+        i01 = candidates[0];
         i10 = candidates[1];
-        i01 = candidates[0]; // axis changed by Hyowon
+      } else if (cost1 < 0 && cost2 > 0) {
+        i01 = candidates[1];
+        i10 = candidates[0];
       } else
         continue;
       // final check, do angles play well together to form a quad?
@@ -852,7 +852,7 @@ public:
 #if DEBUG_INDEXING > 1
     cv::Mat bestDebug, origDebug;
 
-    cv::cvtColor(input, DEBUG, CV_GRAY2RGB);
+    cv::cvtColor(input, DEBUG, cv::COLOR_GRAY2RGB);
     int cnt = 0;
     for (size_t i = 0; i < pts.size(); i++) {
       if (active.at<uint8_t>(i) != 0) {
@@ -862,7 +862,7 @@ public:
         ++cnt;
         cv::rectangle(DEBUG, cv::Point((pt.x - 3) * 65536, (pt.y - 3) * 65536),
                       cv::Point((pt.x + 3) * 65536, (pt.y + 3) * 65536),
-                      cv::Scalar(255, 0, 0), 1, CV_AA, 16);
+                      cv::Scalar(255, 0, 0), 1, cv::LINE_AA, 16);
       }
     }
     printf("Remaining %d active points\n", cnt);
@@ -906,19 +906,19 @@ public:
         cv::line(DEBUG,
                  cv::Point(pts[quad.i00_].x * 65536, pts[quad.i00_].y * 65536),
                  cv::Point(pts[quad.i10_].x * 65536, pts[quad.i10_].y * 65536),
-                 cv::Scalar(0, 0, 255), 1, CV_AA, 16);
+                 cv::Scalar(0, 0, 255), 1, cv::LINE_AA, 16);
         cv::line(DEBUG,
                  cv::Point(pts[quad.i10_].x * 65536, pts[quad.i10_].y * 65536),
                  cv::Point(pts[quad.i01_].x * 65536, pts[quad.i01_].y * 65536),
-                 cv::Scalar(0, 255, 0), 1, CV_AA, 16);
+                 cv::Scalar(0, 255, 0), 1, cv::LINE_AA, 16);
         cv::line(DEBUG,
                  cv::Point(pts[quad.i01_].x * 65536, pts[quad.i01_].y * 65536),
                  cv::Point(pts[quad.i11_].x * 65536, pts[quad.i11_].y * 65536),
-                 cv::Scalar(255, 0, 0), 1, CV_AA, 16);
+                 cv::Scalar(255, 0, 0), 1, cv::LINE_AA, 16);
         cv::line(DEBUG,
                  cv::Point(pts[quad.i11_].x * 65536, pts[quad.i11_].y * 65536),
                  cv::Point(pts[quad.i00_].x * 65536, pts[quad.i00_].y * 65536),
-                 cv::Scalar(255, 0, 255), 1, CV_AA, 16);
+                 cv::Scalar(255, 0, 255), 1, cv::LINE_AA, 16);
 #endif
         while (true) {
           int offr, offc;
@@ -1009,7 +1009,7 @@ public:
                             std::numeric_limits<float>::infinity()));
         }
 #if DEBUG_INDEXING > 2
-      cv::cvtColor(input, DEBUG, CV_GRAY2RGB);
+      cv::cvtColor(input, DEBUG, cv::COLOR_GRAY2RGB);
       orp::calibration::drawCheckerboardCorners(DEBUG, obs, 1.5, true);
       imshow("output", DEBUG);
       cv::waitKey(0);

@@ -59,9 +59,9 @@
 
 #pragma once
 
-namespace AprilTags {
+namespace Deltille {
 
-const unsigned long long t25h7[] = {
+const unsigned long long aprilTag25h7[] = {
     0x4b770dLL,  0x11693e6LL, 0x1a599abLL, 0xc3a535LL,  0x152aafaLL,
     0xaccd98LL,  0x1cad922LL, 0x2c2fadLL,  0xbb3572LL,  0x14a3b37LL,
     0x186524bLL, 0xc99d4cLL,  0x23bfeaLL,  0x141cb74LL, 0x1d0d139LL,
@@ -112,6 +112,6 @@ const unsigned long long t25h7[] = {
     0x13c9f77LL, 0x110ee8fLL, 0xf17beaLL,  0x99fb5dLL,  0x337141LL,
     0x02b54dLL,  0x1233a70LL};
 
-static const TagCodes tagCodes25h7 =
-    TagCodes("t25h7", 25, 7, t25h7, sizeof(t25h7) / sizeof(t25h7[0]));
+static const TagCodes aprilTagCodes25h7 =
+    TagCodes("aprilTag25h7", 25, 7, aprilTag25h7, sizeof(aprilTag25h7) / sizeof(aprilTag25h7[0]));
 }
