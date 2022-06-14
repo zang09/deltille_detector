@@ -224,8 +224,6 @@ venv.bak/
 Session.vim
 # temporary
 .netrwhist
-# auto-generated tag files
-tags
 
 ### Windows ###
 # Windows thumbnail cache files
