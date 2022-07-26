@@ -1,5 +1,5 @@
 # Deltille detector
-This is a spin-off version of Deltille detector (https://github.com/facebookincubator/deltille), which was published once and almost archieved with no update by now. In this repo, we've fixed several issues that had been blocking the use of the Deltille detector, such as missing script for target generation, mismatch in the grid indices between board definition and detection, compile issues, etc. 
+This is a spin-off version of Deltille detector (https://github.com/facebookincubator/deltille), which was published once and almost archieved with no update. In this repo, we've fixed several issues that had been blocking the wide use of the Deltille detector, such as missing script for target generation, mismatched feature indices between definition and detection, opencv compile issue, etc. 
 
 ## Target generation
 We hope the python scripts added in `scripts` folder are useful for the generation of a pattern PDF and a target description (DSC) file. An example command to generate some patterns for an icosahedron calibration object is:
