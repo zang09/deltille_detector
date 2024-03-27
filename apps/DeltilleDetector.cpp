@@ -156,10 +156,11 @@ void RunDetector(DataSource *data_source, string target_dsc_fn,
       auto outpath =
           output_dir.empty() ? filepath.parent_path() : fs::path(output_dir);
       auto basename = filepath.stem();
-      auto out_orpc_fn = outpath / fs::change_extension(basename, ".orpc");
+      auto out_orpc_fn = filepath.parent_path() / fs::change_extension(basename, ".orpc");
 
       std::ofstream fo(out_orpc_fn.string());
       if (fo.is_open()) {
+        string filename = basename.string() + ".jpg";
         writeCornersToFile(fo, corners, filename, I.size(), true);
       } else {
         cerr << "Failed to open: " << out_orpc_fn << " for writing"
@@ -167,7 +168,7 @@ void RunDetector(DataSource *data_source, string target_dsc_fn,
       }
 
       if (save_images) {
-        auto out_basename = "out_" + basename.string();
+        auto out_basename = basename.string();
         auto out_img_fn = fs::change_extension(outpath / out_basename, ".png");
         cout << "Writing detection image to : " << out_img_fn << endl;
         cv::imwrite(out_img_fn.string(), output_image);
