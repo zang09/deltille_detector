@@ -19,7 +19,7 @@ OpenCV 4.0+
 ```
 $ mkdir build
 $ cd build
-$ cmake .. -DCMAKE_BIULD_TYPE=Release
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
 $ make
 ```
 
