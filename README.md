@@ -25,7 +25,7 @@ $ make
 
 ## How to run
 ```
-$ ./deltille_detector -t /path/to/<pattern>.dsc -f /path/to/your/image/*.png -o /output/path -s
+$ ./apps/deltille_detector -t /path/to/<pattern>.dsc -f /path/to/your/image/*.png -o /output/path -s
 ```
 
 ## License
