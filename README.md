@@ -4,7 +4,10 @@ This is a spin-off version of Deltille detector (https://github.com/facebookincu
 ## Target generation
 We hope the python scripts added in `scripts` folder are useful for the generation of a pattern PDF and a target description (DSC) file. An example command to generate some patterns for an icosahedron calibration object is:
 ```
-$ python3 ./scripts/generate_pattern.py --design ico_deltille ico_deltille.pdf
+$ python3 ./scripts/generate_pattern.py --design a4_checkerboard a4_checkerboard.pdf
+```
+```
+$ python3 ./scripts/generate_pattern.py --design a4_deltille a4_deltille.pdf
 ```
 The idea is to have a dedicated "design" script in `scripts/designs` folder for each new target design.
 Please refer to the examples in the folder and make your own patterns for your purpose.
@@ -25,7 +28,7 @@ $ make
 
 ## How to run
 ```
-$ ./apps/deltille_detector -t /path/to/<pattern>.dsc -f /path/to/your/image/*.png -o /output/path -s
+$ ./build/apps/deltille_detector -t /path/to/<pattern>.dsc -f /path/to/your/image/*.png -o /output/path -s
 ```
 
 ## License
